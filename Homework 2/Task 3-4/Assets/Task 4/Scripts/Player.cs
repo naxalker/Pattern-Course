@@ -1,28 +1,68 @@
+using NaughtyAttributes;
 using System;
 using UnityEngine;
 
 public class Player : MonoBehaviour
 {
-    public event Action Defeat;
-    public event Action<int> LevelUp;
-    public event Action<int> CauseDamage;
+    public event Action<int, int, int> Inited;
+    public event Action Died;
+    public event Action<int> LeveledUp;
+    public event Action<int, int> AppliedDamage;
 
-    [SerializeField] private int _health;
-    [SerializeField] private int _level;
+    [SerializeField] private int _initHealth;
+    [SerializeField] private int _initLevel;
+    private int _health, _maxHealth;
+    private int _level;
+    private bool isDead;
 
-    [NaughtyAttributes.Button("+1 Уровень")]
-    public void IncreaseLevel()
+    public void Initialize()
     {
-        _level++;
-        LevelUp?.Invoke(_level);
+        _health = _maxHealth = _initHealth;
+        _level = _initLevel;
+
+        isDead = false;
+
+        Inited?.Invoke(_health, _maxHealth, _level);
     }
 
-    public void DealDamage(int damage)
+    public void IncreaseLevel()
     {
+        if (isDead)
+            return;
+
+        _level++;
+        LeveledUp?.Invoke(_level);
+    }
+    
+    public void ApplyDamage(int damage)
+    {
+        if (isDead)
+            return;
+
         _health -= damage;
-        CauseDamage?.Invoke(_health);
+        AppliedDamage?.Invoke(_health, _maxHealth);
 
         if (_health <= 0)
-            Defeat?.Invoke();
+        {
+            isDead = true;
+            Died?.Invoke();
+        }
+    }
+
+    public void Restart()
+    {
+        Initialize();
+    }
+
+    [Button("+1 Уровень", enabledMode: EButtonEnableMode.Playmode)]
+    private void DebugLevelUp()
+    {
+        IncreaseLevel();
+    }
+
+    [Button("-10 ХП", enabledMode: EButtonEnableMode.Playmode)]
+    private void DebugApplyDamage()
+    {
+        ApplyDamage(10);
     }
 }

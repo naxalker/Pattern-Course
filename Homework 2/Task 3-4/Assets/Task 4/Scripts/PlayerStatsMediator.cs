@@ -1,6 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
 
 public class PlayerStatsMediator : MonoBehaviour
@@ -8,15 +5,37 @@ public class PlayerStatsMediator : MonoBehaviour
     [SerializeField] private Player _player;
     [SerializeField] private UIController _controller;
 
-    private void Awake()
+    public void Initialize()
     {
-        _player.LevelUp += OnLevelIncreased;
+        _player.Inited += OnInited;
+        _player.Died += OnDied;
+        _player.LeveledUp += OnLeveledUp;
+        _player.AppliedDamage += OnAppliedDamage;
     }
 
     private void OnDestroy()
     {
-        _player.LevelUp -= OnLevelIncreased;
+        _player.Inited -= OnInited;
+        _player.Died -= OnDied;
+        _player.LeveledUp -= OnLeveledUp;
+        _player.AppliedDamage -= OnAppliedDamage;
     }
 
-    private void OnLevelIncreased(int level) => _controller.UpdateLevelText(level);
+    public void Restart()
+    {
+        _controller.HideRestartButton();
+        _player.Restart();
+    }
+
+    private void OnInited(int health, int maxHealth, int level)
+    {
+        _controller.UpdateHealthBar((float)health / maxHealth);
+        _controller.UpdateLevelText(level);
+    }
+
+    private void OnDied() => _controller.ShowRestartButton();
+
+    private void OnLeveledUp(int level) => _controller.UpdateLevelText(level);
+
+    private void OnAppliedDamage(int health, int maxHealth) => _controller.UpdateHealthBar((float)health / maxHealth);
 }
