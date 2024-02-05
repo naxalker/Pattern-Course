@@ -6,8 +6,13 @@ using Random = UnityEngine.Random;
 
 namespace Assets.Visitor
 {
-    public class Spawner: MonoBehaviour, IEnemyDeathNotifier
+    public class Spawner: MonoBehaviour, IEnemyDeathNotifier, IEnemySpawnNotifier
     {
+        private const int MaxEnemyWeight = 10;
+
+        public event Action<Enemy> DeathNotified;
+        public event Action<Enemy> SpawnNotified;
+
         [SerializeField] private float _spawnCooldown;
         [SerializeField] private List<Transform> _spawnPoints;
         [SerializeField] private EnemyFactory _enemyFactory;
@@ -16,10 +21,12 @@ namespace Assets.Visitor
 
         private List<Enemy> _spawnedEnemies = new List<Enemy>();
 
-        private List<Transform> _availableSpawnPoints;
-        private List<Transform> _unavailableSpawnPoints;
+        private Weight _weight;
 
-        public event Action<Enemy> Notified;
+        public void Initialize(Weight weight)
+        {
+            _weight = weight;
+        }
 
         public void StartWork()
         {
@@ -34,6 +41,7 @@ namespace Assets.Visitor
                 StopCoroutine(_spawn);
         }
 
+        [ContextMenu("Kill")]
         public void KillRandomEnemy()
         {
             if (_spawnedEnemies.Count == 0)
@@ -46,10 +54,17 @@ namespace Assets.Visitor
         {
             while (true)
             {
+                if (_weight.Value >= MaxEnemyWeight)
+                    break;
+
                 Enemy enemy = _enemyFactory.Get((EnemyType)Random.Range(0, Enum.GetValues(typeof(EnemyType)).Length));
                 enemy.MoveTo(_spawnPoints[Random.Range(0, _spawnPoints.Count)].position);
                 enemy.Died += OnEnemyDied;
+
+                SpawnNotified?.Invoke(enemy);
+
                 _spawnedEnemies.Add(enemy);
+
                 yield return new WaitForSeconds(_spawnCooldown);
             }
         }
@@ -57,7 +72,7 @@ namespace Assets.Visitor
         private void OnEnemyDied(Enemy enemy)
         {
             enemy.Died -= OnEnemyDied;
-            Notified?.Invoke(enemy);
+            DeathNotified?.Invoke(enemy);
             _spawnedEnemies.Remove(enemy);
         }
     }

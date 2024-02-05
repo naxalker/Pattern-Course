@@ -4,6 +4,6 @@ namespace Assets.Visitor
 {
     public interface IEnemyDeathNotifier
     {
-        event Action<Enemy> Notified;
+        event Action<Enemy> DeathNotified;
     }
 }
