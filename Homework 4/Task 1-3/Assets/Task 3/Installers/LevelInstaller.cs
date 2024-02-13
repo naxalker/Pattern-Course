@@ -18,15 +18,15 @@ namespace sceneloader
 
         private void BindLevelMediator()
         {
-            Container.Bind<LevelUI>().FromInstance(_levelUI).AsSingle();
+            Container.BindInstance(_levelUI).AsSingle();
             Container.BindInterfacesAndSelfTo<Level>().AsSingle();
             Container.BindInterfacesAndSelfTo<LevelUIMediator>().AsSingle();
         }
 
         private void BindSpawner()
         {
-            Container.Bind<BallFactory>().FromInstance(_factory).AsSingle();
-            Container.Bind<BallsSpawnerConfig>().FromInstance(_config).AsSingle();
+            Container.BindInstance(_factory).AsSingle();
+            Container.BindInstance(_config).AsSingle();
             Container.Bind<BallsSpawner>().AsSingle();
         }
     }

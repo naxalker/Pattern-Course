@@ -47,11 +47,5 @@ namespace sceneloader
             _spawnedBalls.Remove(ball);
             ball.Popped -= OnBallPopped;
         }
-
-        private void OnDrawGizmos()
-        {
-            Gizmos.DrawWireCube(new Vector3(0f, SpawnHeight, 0f),
-                new Vector3(2 * SpawnBound, 0f, 2 * SpawnBound));
-        }
     }
 }

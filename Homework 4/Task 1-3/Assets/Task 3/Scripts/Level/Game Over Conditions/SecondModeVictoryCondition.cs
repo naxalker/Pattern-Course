@@ -1,38 +1,55 @@
+using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace sceneloader
 {
-    public class SecondModeVictoryCondition : IVictoryCondition
+    public class SecondModeVictoryCondition : IGameOverCondition
     {
-        private int _originNonTargetedBallsCount;
+        public event Action Won;
+        public event Action Lost;
+
         private List<Ball> _balls;
         private BallType _targetBallType;
 
-        public SecondModeVictoryCondition(List<Ball> spawnedBalls, BallType targetType)
-        {
-            _balls = spawnedBalls;
-            _targetBallType = targetType;
+        private int _originTargetedBallsCount;
 
-            _originNonTargetedBallsCount = _balls
-                .Where(ball => ball.Type != _targetBallType)
-                .Count();
+        public SecondModeVictoryCondition(BallType targetBallType)
+        {
+            _targetBallType = targetBallType;
         }
 
-        public bool HasLost()
-        {
-            List<Ball> nonTargetedBalls = new List<Ball>(_balls
-                .Where(ball => ball.Type != _targetBallType));
+        public BallType TargetBallType => _targetBallType;
 
-            return nonTargetedBalls.Count != _originNonTargetedBallsCount;
+        public void Initialize(List<Ball> spawnedBalls)
+        {
+            _originTargetedBallsCount = 0;
+
+            _balls = new List<Ball>(spawnedBalls);
+
+            foreach (Ball ball in _balls)
+            {
+                ball.Popped += OnBallPopped;
+                if (ball.Type == _targetBallType)
+                    _originTargetedBallsCount++;
+            }
         }
 
-        public bool HasWon()
+        private void OnBallPopped(Ball ball)
         {
-            List<Ball> targetedBalls = new List<Ball>(_balls
-                .Where(ball => ball.Type == _targetBallType));
+            _balls.Remove(ball);
+            ball.Popped -= OnBallPopped;
 
-            return targetedBalls.Count == 0;
+            if (ball.Type != _targetBallType)
+            {
+                Lost?.Invoke();
+            }
+            else
+            {
+                _originTargetedBallsCount--;
+
+                if (_originTargetedBallsCount == 0)
+                    Won?.Invoke();
+            }
         }
     }
 }

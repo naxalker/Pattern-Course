@@ -1,56 +1,43 @@
 using System;
-using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using Zenject;
 
 namespace sceneloader
 {
-    public class Level : ITickable
+    public class Level : IInitializable, IDisposable
     {
         public event Action Won;
         public event Action Lost;
 
-        private IVictoryCondition _victoryCondition;
-
+        private IGameOverCondition _victoryCondition;
         private BallsSpawner _spawner;
 
-        public Level(BallsSpawner spawner)
+        public Level(IGameOverCondition victoryCondition, BallsSpawner spawner)
         {
+            _victoryCondition = victoryCondition;
             _spawner = spawner;
         }
 
-        public BallsSpawner Spawner => _spawner;
+        public IGameOverCondition VictoryCondition => _victoryCondition;
 
-        public void Tick()
+        public void Initialize()
         {
-            if (_victoryCondition == null)
-                return;
+            Debug.Log(_victoryCondition.GetType());
 
-            if (_victoryCondition.HasWon())
-            {
-                ProcessGameOver(true);
-            }
-            else if (_victoryCondition.HasLost())
-            {
-                ProcessGameOver(false);
-            }
-        }
-
-        public void SetVictoryCondition(IVictoryCondition victoryCondition)
-            => _victoryCondition = victoryCondition;
-
-        public void StartLevel()
-        {
             _spawner.SpawnBalls();
+            _victoryCondition.Initialize(_spawner.SpawnedBalls);
+
+            _victoryCondition.Won += () => Won?.Invoke();
+            _victoryCondition.Lost += () => Lost?.Invoke();
         }
 
-        private void ProcessGameOver(bool hasWon)
+        public void Dispose()
         {
-            if (hasWon)
-                Won?.Invoke();
-            else
-                Lost?.Invoke();
+            _victoryCondition.Won -= () => Won?.Invoke();
+            _victoryCondition.Lost -= () => Lost?.Invoke();
         }
+
+        public void SetVictoryCondition(IGameOverCondition victoryCondition)
+            => _victoryCondition = victoryCondition;
     }
 }

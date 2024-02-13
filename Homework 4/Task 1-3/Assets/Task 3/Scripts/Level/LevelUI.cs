@@ -2,50 +2,72 @@ using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Zenject;
 
 namespace sceneloader
 {
     public class LevelUI : MonoBehaviour
     {
-        public event Action ModeSelected;
-        public event Action FirstModeSelected;
-        public event Action SecondModeSelected;
+        [SerializeField] private GameObject _gameOverPanel, _colorPanel;
+        [SerializeField] private Button _menuButton, _restartButton;
 
-        [SerializeField] private GameObject _startPanel, _endPanel, _colorPanel;
-        [SerializeField] private Button _firstModeButton, _secondModeButton;
+        private SceneLoadMediator _sceneLoaderMediator;
+
+        [Inject]
+        public void Construct(SceneLoadMediator sceneLoaderMediator)
+        {
+            _sceneLoaderMediator = sceneLoaderMediator;
+        }
 
         private void OnEnable()
         {
-            _firstModeButton.onClick.AddListener(OnButtonClick);
-            _secondModeButton.onClick.AddListener(OnButtonClick);
-
-            _firstModeButton.onClick.AddListener(OnFirstModeButtonClick);
-
-            _secondModeButton.onClick.AddListener(OnSecondModeButtonClick);
+            _menuButton.onClick.AddListener(OnMenuButtonClick);
+            _restartButton.onClick.AddListener(OnRestartButtonClick);
         }
 
-        public void ShowEndPanel(bool hasWon)
+        private void OnDisable()
         {
-            _endPanel.SetActive(true);
-            _endPanel.GetComponentInChildren<TextMeshProUGUI>().text = hasWon ? "Победа!" : "Поражение...";
+            _menuButton.onClick.RemoveListener(OnMenuButtonClick);
+            _restartButton.onClick.RemoveListener(OnRestartButtonClick);
         }
 
-        public void SetTargetColor(Color targetColor)
-            => _colorPanel.GetComponentInChildren<Image>().color = targetColor;
-
-        private void OnButtonClick()
+        public void ShowGameOverPanel(bool hasWon)
         {
-            _startPanel.SetActive(false);
-            ModeSelected?.Invoke();
+            _gameOverPanel.SetActive(true);
+            _gameOverPanel.GetComponentInChildren<TextMeshProUGUI>().text = hasWon ? "Победа!" : "Поражение...";
         }
 
-        private void OnFirstModeButtonClick() => FirstModeSelected?.Invoke();
-
-        private void OnSecondModeButtonClick()
+        public void DisplayTargetColor(BallType ballType)
         {
             _colorPanel.SetActive(true);
 
-            SecondModeSelected?.Invoke();
+            Color color;
+
+            switch (ballType)
+            {
+                case BallType.Red:
+                    color = Color.red;
+                    break;
+
+                case BallType.Yellow:
+                    color = Color.yellow;
+                    break;
+
+                case BallType.Green:
+                    color = Color.green;
+                    break;
+
+                default:
+                    throw new ArgumentException(nameof(ballType));
+            }
+
+            _colorPanel.GetComponentInChildren<Image>().color = color;
         }
+
+        private void OnMenuButtonClick()
+            => _sceneLoaderMediator.GoToMainMenu();
+
+        private void OnRestartButtonClick()
+            => _sceneLoaderMediator.RestartGameplayLevel();
     }
 }

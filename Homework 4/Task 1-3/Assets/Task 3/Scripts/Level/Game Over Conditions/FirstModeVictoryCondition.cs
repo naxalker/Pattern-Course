@@ -1,18 +1,32 @@
+using System;
 using System.Collections.Generic;
 
 namespace sceneloader
 {
-    public class FirstModeVictoryCondition : IVictoryCondition
+    public class FirstModeVictoryCondition : IGameOverCondition
     {
+        public event Action Won;
+        public event Action Lost;
+
         private List<Ball> _balls;
 
-        public FirstModeVictoryCondition(List<Ball> spawnedBalls)
+        public void Initialize(List<Ball> spawnedBalls)
         {
-            _balls = spawnedBalls;
+            _balls = new List<Ball>(spawnedBalls);
+
+            foreach (Ball ball in _balls)
+            {
+                ball.Popped += OnBallPopped;
+            }
         }
 
-        public bool HasLost() => false;
+        private void OnBallPopped(Ball ball)
+        {
+            _balls.Remove(ball);
+            ball.Popped -= OnBallPopped;
 
-        public bool HasWon() => _balls.Count == 0;
+            if (_balls.Count == 0)
+                Won?.Invoke();
+        }
     }
 }
